@@ -66,46 +66,67 @@ INSERT INTO Enrollment VALUES
 ('S00008','C00001',5.5),
 ('S00008','C00002',6.5);
 
--- Phần A:
--- câu 1:
 
+-- c1
 create or replace view View_StudentBasic as
-select s.StudentID, s.FullName, d.DeptName from Student s 
+select s.StudentID, s.FullName, d.DeptName
+from Student s
 join Department d on s.DeptID = d.DeptID;
 
 select * from View_StudentBasic;
 
--- câu 2:
-create index idx_st_fullname on Student(FullName);
--- câu 3:
+-- c2
+create index idx_student_fullname
+on Student(FullName);
+
 delimiter $$
+
+-- c3
 create procedure GetStudentsIT()
 begin
 	select s.StudentID, s.FullName, s.Gender, s.BirthDate, d.DeptName
-    from Student s 
-    join Department d on s.DeptID = d.DeptID
-    where d.DeptName = "Information Technology";
+	from Student s
+	join Department d on s.DeptID = d.DeptID
+	where d.DeptName = 'Information Technology';
 end$$
 
-
+delimiter ;
 
 call GetStudentsIT();
 
--- câu 4:
--- a
+-- c4
 create or replace view View_StudentCountByDept as
-select d.DeptName, COUNT(s.StudentID) as TotalStudents
+select d.DeptName, count(s.StudentID) as TotalStudents
 from Department d
 left join Student s on d.DeptID = s.DeptID
 group by d.DeptName;
 
-select * from View_StudentCountByDept;
--- b
-select * from View_StudentCountByDept
+select *
+from View_StudentCountByDept
 where TotalStudents = (
 	select max(TotalStudents)
-    from View_StudentCountByDept;
-)
--- câu 5:
--- câu 6:
+	from View_StudentCountByDept
+);
 
+delimiter $$
+
+-- c5
+create procedure GetTopScoreStudent(
+	in p_CourseID char(6)
+)
+begin
+	select s.StudentID, s.FullName, c.CourseName, e.Score
+	from Enrollment e
+	join Student s on e.StudentID = s.StudentID
+	join Course c on e.CourseID = c.CourseID
+	where e.CourseID = p_CourseID
+	  and e.Score = (
+		select max(Score)
+		from Enrollment
+		where CourseID = p_CourseID
+	  );
+end$$
+
+delimiter ;
+
+call GetTopScoreStudent('C00001');
